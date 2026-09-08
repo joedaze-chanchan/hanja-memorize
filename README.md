@@ -6,6 +6,8 @@
 
 범위: 한자능력검정시험 8급 50자 + 7급Ⅱ 50자 = 100자.
 
+배포: https://joedaze-chanchan.github.io/hanja-memorize/
+
 ## 실행
 ```
 python -m http.server 8767
