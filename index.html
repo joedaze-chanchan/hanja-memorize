@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#f6f3ea" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>한자 배우기</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- 참여자 고르기 / 만들기 -->
+  <section id="profile" class="screen" hidden>
+    <header class="home-header">
+      <h1>한자 배우기</h1>
+      <p class="sub">누가 할까요?</p>
+    </header>
+    <div id="profile-list" class="profile-list"></div>
+    <div id="profile-form" class="profile-form" hidden>
+      <h2 id="profile-form-title">새 친구 만들기</h2>
+      <p class="modal-sub">캐릭터 모습을 고르고 이름을 적어 주세요</p>
+      <div id="avatar-grid" class="avatar-grid"></div>
+      <input id="profile-name" class="name-input" type="text" maxlength="8" placeholder="이름 (8글자까지)" autocomplete="off" />
+      <div class="done-actions">
+        <button id="profile-cancel" class="btn ghost" type="button">취소</button>
+        <button id="profile-save" class="btn primary" type="button">시작!</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 대문: 메뉴 선택 -->
+  <section id="main" class="screen" hidden>
+    <header class="home-header">
+      <h1>한자 배우기</h1>
+      <button id="profile-chip" class="profile-chip" type="button">
+        <span id="chip-avatar" class="chip-avatar">🦁</span>
+        <span id="chip-name" class="chip-name">이름</span>
+        <small>바꾸기</small>
+      </button>
+      <p class="sub">무엇을 할까요?</p>
+    </header>
+    <nav class="menu">
+      <button class="menu-btn" type="button" data-go="home">
+        <span class="menu-num">1</span>
+        <span class="menu-text"><b>한자 따라쓰기</b><small>획순대로 따라 써요 (8급 · 7급Ⅱ)</small></span>
+        <span class="menu-badge" id="menu-trace-progress"></span>
+      </button>
+      <button class="menu-btn" type="button" data-go="memo">
+        <span class="menu-num">2</span>
+        <span class="menu-text"><b>한자 외우기</b><small>훈음 고르기 → 따라 쓰기 → 한자 고르기</small></span>
+        <span class="menu-badge" id="menu-memo-progress"></span>
+      </button>
+      <button class="menu-btn" type="button" data-go="exam">
+        <span class="menu-num">3</span>
+        <span class="menu-text"><b>한자 시험</b><small>20문제로 실력을 확인해요</small></span>
+        <span class="menu-badge" id="menu-exam-best"></span>
+      </button>
+    </nav>
+    <footer class="home-footer">
+      <button id="settings-btn" class="text-btn" type="button">따라 쓰기 횟수: <b id="settings-repeat">3</b>번 · 변경</button>
+      <button id="reset-btn" class="text-btn" type="button">기록 지우기</button>
+    </footer>
+
+    <!-- 첫 실행 설정 -->
+    <div id="settings" class="modal" hidden>
+      <div class="modal-card">
+        <h2>한 글자를 몇 번씩 따라 쓸까요?</h2>
+        <p class="modal-sub">글자마다 이 횟수만큼 따라 써야 완성됩니다. 나중에 홈 화면에서 바꿀 수 있어요.</p>
+        <div id="repeat-options" class="repeat-options"></div>
+        <button id="settings-save" class="btn primary" type="button">시작하기</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 한자 고르기 -->
+  <section id="home" class="screen" hidden>
+    <header class="sub-header">
+      <button class="icon-btn" type="button" data-go="main" aria-label="대문으로">‹</button>
+      <h1>한자 따라쓰기</h1>
+      <span class="icon-spacer"></span>
+    </header>
+    <div id="level-tabs" class="level-tabs"></div>
+    <p class="sub center">한자를 고르고 획순대로 따라 써 보세요</p>
+    <div id="resume-practice" class="resume-banner" hidden>
+      <span id="resume-practice-text"></span>
+      <button id="resume-practice-btn" class="btn primary small" type="button">이어서 하기</button>
+    </div>
+    <div id="hanja-grid" class="hanja-grid"></div>
+  </section>
+
+  <!-- 연습 화면 -->
+  <section id="practice" class="screen" hidden>
+    <header class="practice-header">
+      <button id="back-btn" class="icon-btn" type="button" aria-label="홈으로">‹</button>
+      <div class="header-center">
+        <div id="stroke-dots" class="stroke-dots" aria-label="획 진행"></div>
+        <div id="round-label" class="round-label">1/3번째</div>
+      </div>
+      <button id="demo-btn" class="icon-btn" type="button" aria-label="시범 다시 보기">▶</button>
+    </header>
+
+    <div class="letter-info">
+      <div class="letter-name">
+        <span id="info-hanja" class="big hanja">校</span>
+        <span id="info-huneum" class="ko">학교 교</span>
+        <button id="speak-btn" class="speak-btn" type="button" aria-label="발음 듣기">🔊</button>
+      </div>
+      <div id="info-sub" class="phonics"></div>
+    </div>
+
+    <div class="canvas-wrap">
+      <canvas id="canvas"></canvas>
+    </div>
+
+    <p id="hint" class="hint">시범을 잘 보세요</p>
+
+    <div id="done" class="done" hidden>
+      <div class="done-card">
+        <div class="done-star">★</div>
+        <p id="done-text">잘했어요!</p>
+        <div class="done-actions">
+          <button id="again-btn" class="btn ghost" type="button">다시 쓰기</button>
+          <button id="next-btn" class="btn primary" type="button">다음 한자</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 한자 외우기 -->
+  <section id="memo" class="screen game" hidden>
+    <div id="memo-menu">
+      <header class="sub-header">
+        <button id="memo-back" class="icon-btn" type="button" aria-label="대문으로">‹</button>
+        <h1>한자 외우기</h1>
+        <span class="icon-spacer"></span>
+      </header>
+      <div class="game-intro">
+        <div class="game-intro-icon">🧠</div>
+        <p>한 글자를 세 번 연달아 익혀요.<br />① 한자를 보고 훈음 고르기 ② 획순대로 따라 쓰기 ③ 훈음을 보고 한자 고르기<br />한 번도 안 틀리면 '외운 한자'가 돼요.</p>
+      </div>
+      <div id="memo-resume" class="resume-banner" hidden>
+        <span id="memo-resume-text"></span>
+        <button id="memo-resume-btn" class="btn primary small" type="button">이어서 하기</button>
+      </div>
+      <div id="memo-level" class="diff-list"></div>
+      <p id="memo-best" class="game-best"></p>
+      <div class="game-start-wrap"><button id="memo-start" class="btn primary" type="button">시작!</button></div>
+    </div>
+
+    <div id="memo-play" hidden>
+      <div class="game-top">
+        <span id="memo-count" class="game-score">1/50</span>
+        <span id="memo-phase" class="phase-chip">훈음 고르기</span>
+        <span id="memo-score" class="game-score">0점</span>
+        <button id="memo-pause" class="icon-btn small" type="button" aria-label="일시정지">II</button>
+      </div>
+      <div class="memo-card">
+        <div id="memo-q" class="quiz-q"></div>
+        <div id="memo-big" class="memo-big"></div>
+        <div id="memo-opts" class="quiz-opts" hidden></div>
+        <div id="memo-write" class="memo-write" hidden>
+          <div id="memo-strokes" class="stroke-count"></div>
+          <canvas id="memo-pad"></canvas>
+        </div>
+      </div>
+      <p id="memo-msg" class="game-msg"></p>
+
+      <div id="memo-paused" class="done" hidden>
+        <div class="done-card">
+          <p>잠깐 쉬는 중</p>
+          <div class="done-actions">
+            <button id="mo-quit" class="btn ghost" type="button">그만하기</button>
+            <button id="mo-resume" class="btn primary" type="button">계속하기</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="memo-over" class="done" hidden>
+        <div class="done-card">
+          <div class="done-star">🏅</div>
+          <p id="mo-title">한 바퀴 끝!</p>
+          <div class="go-stats">
+            <div id="mo-score">0점</div>
+            <div id="mo-mastered">외운 한자 0자</div>
+            <div id="mo-best">최고 점수 0점</div>
+          </div>
+          <div class="done-actions">
+            <button id="mo-menu" class="btn ghost" type="button">급수 선택</button>
+            <button id="mo-retry" class="btn primary" type="button">다시 하기</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 한자 시험 -->
+  <section id="exam" class="screen game" hidden>
+    <div id="exam-menu">
+      <header class="sub-header">
+        <button id="exam-back" class="icon-btn" type="button" aria-label="대문으로">‹</button>
+        <h1>한자 시험</h1>
+        <span class="icon-spacer"></span>
+      </header>
+      <div class="game-intro">
+        <div class="game-intro-icon">📝</div>
+        <p>20문제, 문제당 5점.<br />한자를 보고 훈음을, 훈음을 보고 한자를 골라요.<br />70점 이상이면 합격!</p>
+      </div>
+      <div id="exam-level" class="diff-list"></div>
+      <p id="exam-best" class="game-best"></p>
+      <div class="game-start-wrap">
+        <button id="exam-start" class="btn primary" type="button">시험 시작!</button>
+        <button id="exam-board-btn" class="btn ghost" type="button">🏆 기록판</button>
+      </div>
+
+      <div id="exam-board" class="done" hidden>
+        <div class="done-card board-card">
+          <h2>🏆 기록판</h2>
+          <p class="modal-sub">이 폰으로 시험 본 친구들의 점수예요</p>
+          <ol id="exam-board-list" class="board-list"></ol>
+          <button id="exam-board-close" class="btn primary" type="button">닫기</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="exam-play" hidden>
+      <div class="game-top">
+        <span id="exam-count" class="game-score">문제 1/20</span>
+        <span id="exam-correct" class="game-lives good">맞힘 0</span>
+        <button id="exam-quit" class="icon-btn small" type="button" aria-label="그만하기">✕</button>
+      </div>
+      <div class="progress-bar"><div id="exam-progress" class="progress-fill"></div></div>
+      <div class="memo-card">
+        <div id="exam-q" class="quiz-q"></div>
+        <div id="exam-big" class="memo-big"></div>
+        <div id="exam-opts" class="quiz-opts"></div>
+      </div>
+      <p id="exam-msg" class="game-msg"></p>
+
+      <div id="exam-over" class="done" hidden>
+        <div class="done-card board-card">
+          <div id="eo-star" class="done-star">🎉</div>
+          <p id="eo-title">합격!</p>
+          <div class="go-stats">
+            <div id="eo-score">0점</div>
+            <div id="eo-correct">20문제 중 0개 맞힘</div>
+            <div id="eo-rank" class="ro-rank"></div>
+            <div id="eo-best">최고 점수 0점</div>
+          </div>
+          <div id="eo-wrong" class="wrong-list"></div>
+          <div class="done-actions">
+            <button id="eo-menu" class="btn ghost" type="button">급수 선택</button>
+            <button id="eo-retry" class="btn primary" type="button">다시 보기</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

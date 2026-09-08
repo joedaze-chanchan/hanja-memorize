@@ -1,0 +1,216 @@
+// 학습 기록 저장소. 지금은 localStorage. 서버로 바꿀 때 이 파일만 교체한다.
+
+const KEY = "hanja-progress";
+const KEY_SETTINGS = "hanja-settings";
+const KEY_BEST = "hanja-game-best";
+
+export const DEFAULT_SETTINGS = { repeat: 3 }; // 한 글자를 따라 쓰는 횟수
+
+export class ProgressStore {
+  constructor(storage = globalThis.localStorage) {
+    this.storage = storage;
+  }
+
+  load() {
+    try {
+      const raw = this.storage && this.storage.getItem(KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  }
+
+  save(data) {
+    try {
+      this.storage && this.storage.setItem(KEY, JSON.stringify(data));
+    } catch {
+      // 저장 실패(사생활 모드 등)는 조용히 무시
+    }
+  }
+
+  get(letter) {
+    return this.load()[letter] || { completed: false, attempts: 0, wrongs: 0, lastAt: null };
+  }
+
+  recordAttempt(letter, wrongs) {
+    const data = this.load();
+    const cur = data[letter] || { completed: false, attempts: 0, wrongs: 0, lastAt: null };
+    cur.attempts += 1;
+    cur.wrongs += wrongs;
+    cur.lastAt = new Date().toISOString();
+    data[letter] = cur;
+    this.save(data);
+    return cur;
+  }
+
+  markCompleted(letter) {
+    const data = this.load();
+    const cur = data[letter] || { completed: false, attempts: 0, wrongs: 0, lastAt: null };
+    cur.completed = true;
+    cur.lastAt = new Date().toISOString();
+    data[letter] = cur;
+    this.save(data);
+    return cur;
+  }
+
+  reset() {
+    this.save({});
+  }
+}
+
+// 설정 저장소. 처음 실행 여부는 저장된 설정이 있는지로 판단한다.
+export class SettingsStore {
+  constructor(storage = globalThis.localStorage) {
+    this.storage = storage;
+  }
+
+  load() {
+    try {
+      const raw = this.storage && this.storage.getItem(KEY_SETTINGS);
+      return raw ? { ...DEFAULT_SETTINGS, ...JSON.parse(raw) } : null;
+    } catch {
+      return null;
+    }
+  }
+
+  save(settings) {
+    try {
+      this.storage && this.storage.setItem(KEY_SETTINGS, JSON.stringify(settings));
+    } catch {
+      // 저장 실패는 무시
+    }
+  }
+}
+
+// 게임 최고 점수 (난이도별)
+export class BestScoreStore {
+  constructor(storage = globalThis.localStorage) {
+    this.storage = storage;
+  }
+
+  load() {
+    try {
+      const raw = this.storage && this.storage.getItem(KEY_BEST);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  }
+
+  get(level) {
+    return this.load()[level] || 0;
+  }
+
+  // 새 점수를 반영하고 갱신된 최고 점수를 돌려준다
+  update(level, score) {
+    const data = this.load();
+    const best = Math.max(data[level] || 0, score);
+    data[level] = best;
+    try {
+      this.storage && this.storage.setItem(KEY_BEST, JSON.stringify(data));
+    } catch {
+      // 저장 실패는 무시
+    }
+    return best;
+  }
+}
+
+// 기록판: 이 기기에서 게임한 모든 참여자의 점수 (참여자별 저장소가 아니라 공통 저장소에 둔다)
+export class BoardStore {
+  constructor(key, storage = globalThis.localStorage) {
+    this.key = key;
+    this.storage = storage;
+  }
+
+  load() {
+    try {
+      const raw = this.storage && this.storage.getItem(this.key);
+      const list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
+    } catch {
+      return [];
+    }
+  }
+
+  save(list) {
+    try {
+      this.storage && this.storage.setItem(this.key, JSON.stringify(list));
+    } catch {
+      // 무시
+    }
+  }
+
+  // 기록을 더하고 전체 순위(1부터)를 돌려준다. 같은 점수는 먼저 낸 쪽이 위.
+  add(entry) {
+    const list = this.load();
+    const e = { ...entry, at: new Date().toISOString() };
+    list.push(e);
+    list.sort((a, b) => b.score - a.score || a.at.localeCompare(b.at));
+    const rank = list.indexOf(e) + 1;
+    this.save(list.slice(0, 100));
+    return rank;
+  }
+
+  top(n = 10) {
+    return this.load().slice(0, n);
+  }
+
+  clear() {
+    this.save([]);
+  }
+}
+
+// 외우기 기록 (한자별). 한 바퀴(훈음 고르기 → 따라 쓰기 → 한자 고르기)를 한 번도 안 틀리고 돌면 '외운 한자'.
+const KEY_MEMORY = "hanja-memory";
+
+export class MemoryStore {
+  constructor(storage = globalThis.localStorage) {
+    this.storage = storage;
+  }
+
+  load() {
+    try {
+      const raw = this.storage && this.storage.getItem(KEY_MEMORY);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  }
+
+  save(data) {
+    try {
+      this.storage && this.storage.setItem(KEY_MEMORY, JSON.stringify(data));
+    } catch {
+      // 무시
+    }
+  }
+
+  get(ch) {
+    return this.load()[ch] || { rounds: 0, perfect: 0, wrongs: 0, mastered: false, lastAt: null };
+  }
+
+  // 한 바퀴를 마쳤을 때. wrongs: 그 바퀴에서 틀린 횟수(보기 잘못 고른 수).
+  record(ch, wrongs) {
+    const data = this.load();
+    const cur = data[ch] || { rounds: 0, perfect: 0, wrongs: 0, mastered: false, lastAt: null };
+    cur.rounds += 1;
+    cur.wrongs += wrongs;
+    if (wrongs === 0) {
+      cur.perfect += 1;
+      cur.mastered = true;
+    }
+    cur.lastAt = new Date().toISOString();
+    data[ch] = cur;
+    this.save(data);
+    return cur;
+  }
+
+  countMastered(chars) {
+    const data = this.load();
+    return chars.filter((ch) => data[ch] && data[ch].mastered).length;
+  }
+
+  reset() {
+    this.save({});
+  }
+}
