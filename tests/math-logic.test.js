@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { makeQuiz, makeChoices, slipAnswer, solve, grade, formatTime, HistoryStore, QUIZ_COUNT, PLAN, KIDS } from "../math/math-logic.js";
+import { makeQuiz, makeSimilar, exprKey, makeChoices, slipAnswer, solve, grade, formatTime, HistoryStore, QUIZ_COUNT, PLAN, KIDS } from "../math/math-logic.js";
 
 function memStorage() {
   const m = new Map();
@@ -73,4 +73,27 @@ test("기록은 아이별로 따로 저장된다", () => {
   assert.equal(h.list(KIDS[1].id).length, 1);
   const rec = h.list(KIDS[1].id)[0];
   assert.equal(h.get(KIDS[1].id, rec.id).score, 80);
+});
+
+test("시작할 때마다 새 문제, 지난번 식은 되도록 피한다", () => {
+  const first = makeQuiz();
+  const second = makeQuiz(Math.random, undefined, first.map(exprKey));
+  const prev = new Set(first.map(exprKey));
+  const repeated = second.filter((p) => prev.has(exprKey(p))).length;
+  assert.ok(repeated <= 2, `겹친 식 ${repeated}개`);
+});
+
+test("틀린 문제 다시 풀기는 같은 종류의 새 문제", () => {
+  const wrong = makeQuiz().filter((_, i) => i % 5 === 0);
+  // 예전 기록처럼 kind가 없어도 종류를 알아낸다
+  const old = wrong.map(({ kind, ...rest }) => rest);
+  for (const src of [wrong, old]) {
+    const again = makeSimilar(src);
+    assert.equal(again.length, wrong.length);
+    again.forEach((p, i) => {
+      assert.equal(p.kind, wrong[i].kind);
+      assert.notEqual(exprKey(p), exprKey(wrong[i]));
+      assert.ok(p.choices.includes(p.answer));
+    });
+  }
 });

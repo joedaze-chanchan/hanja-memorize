@@ -143,27 +143,40 @@ export function makeProblem(kind, rand = Math.random) {
   return { kind, a, op: k.op, b, layout: k.layout, answer: solve(a, k.op, b), choices: makeChoices(a, k.op, b, rand) };
 }
 
-// 시험 한 번의 문제 목록. 같은 식이 두 번 나오지 않는다.
-export function makeQuiz(rand = Math.random, plan = PLAN) {
-  const seen = new Set();
-  const list = [];
-  for (const [kind, count] of plan) {
-    for (let i = 0; i < count; i++) {
-      let p;
-      let tries = 0;
-      do {
-        p = makeProblem(kind, rand);
-      } while (seen.has(`${p.a}${p.op}${p.b}`) && ++tries < 50);
-      seen.add(`${p.a}${p.op}${p.b}`);
-      list.push(p);
-    }
-  }
-  return list;
+export const exprKey = (p) => `${p.a}${p.op}${p.b}`;
+
+// 종류마다 새 문제를 무작위로 만든다. avoid(식 모음)에 있는 식과 한 번 안에서 같은 식은 피한다.
+function makeFresh(kinds, rand, avoid) {
+  const seen = new Set(avoid);
+  return kinds.map((kind) => {
+    let p;
+    let tries = 0;
+    do {
+      p = makeProblem(kind, rand);
+    } while (seen.has(exprKey(p)) && ++tries < 50);
+    seen.add(exprKey(p));
+    return p;
+  });
 }
 
-// 틀린 문제 다시 풀기용: 같은 식, 보기 순서만 새로 섞는다
-export function remakeProblems(problems, rand = Math.random) {
-  return problems.map((p) => ({ ...p, choices: shuffle(p.choices, rand) }));
+// 시험 한 번의 문제 목록. 풀 때마다 새로 무작위로 만든다.
+// avoid: 지난번에 나온 식들 (되도록 다시 나오지 않게)
+export function makeQuiz(rand = Math.random, plan = PLAN, avoid = []) {
+  return makeFresh(plan.flatMap(([kind, count]) => Array(count).fill(kind)), rand, avoid);
+}
+
+// 예전 기록처럼 kind가 없는 문제의 종류를 숫자 크기로 알아낸다
+export function kindOf(p) {
+  if (p.kind && KINDS[p.kind]) return p.kind;
+  const add = p.op === "+";
+  if (p.layout === "h") return add ? "addEasy" : "subEasy";
+  if (p.a >= 100) return add ? "add3" : "sub3";
+  return add ? "add2" : "sub2";
+}
+
+// 틀린 문제 다시 풀기: 틀린 문제와 같은 종류의 새 문제를 무작위로 만든다 (같은 식은 피한다)
+export function makeSimilar(problems, rand = Math.random) {
+  return makeFresh(problems.map(kindOf), rand, problems.map(exprKey));
 }
 
 // answers[i]: 고른 값 또는 null(안 풂)

@@ -2,7 +2,7 @@
 
 import {
   KIDS, DEFAULT_MINUTES, MINUTE_OPTIONS, RETRY_SECONDS_PER_Q,
-  makeQuiz, remakeProblems, grade, formatTime, cheer, HistoryStore, SessionStore,
+  makeQuiz, makeSimilar, exprKey, grade, formatTime, cheer, HistoryStore, SessionStore,
 } from "./math-logic.js";
 import { unlock, success } from "../sfx.js";
 
@@ -127,7 +127,7 @@ function startQuiz(problems, mode, limitSec) {
 function openQuiz() {
   kid = kidById(session.kidId);
   $("quiz-who").textContent = `${kid.avatar} ${kid.name}`;
-  $("quiz-title").textContent = session.mode === "retry" ? `틀린 문제 다시 풀기 · ${session.problems.length}문제` : `수학 ${session.problems.length}문제`;
+  $("quiz-title").textContent = session.mode === "retry" ? `비슷한 새 문제 · ${session.problems.length}문제` : `수학 ${session.problems.length}문제`;
   $("total-count").textContent = session.problems.length;
   renderSheet();
   show("quiz");
@@ -254,7 +254,7 @@ function finish(timeUp) {
     usedSec,
     limitSec: s.limitSec,
     timeUp,
-    items: g.items.map(({ a, op, b, layout, answer, choices, picked }) => ({ a, op, b, layout, answer, choices, picked })),
+    items: g.items.map(({ kind, a, op, b, layout, answer, choices, picked }) => ({ kind, a, op, b, layout, answer, choices, picked })),
   });
   kid = kidById(s.kidId);
   openResult(s.kidId, record);
@@ -274,7 +274,7 @@ function openResult(kidId, record) {
   note.hidden = !record.timeUp;
   note.textContent = "⏰ 시간이 끝나서 자동으로 제출했어요";
   $("retry-btn").hidden = wrong === 0;
-  $("retry-btn").textContent = `틀린 문제 ${wrong}개 다시 풀기`;
+  $("retry-btn").textContent = `틀린 문제와 비슷한 새 문제 ${wrong}개 풀기`;
   $("tab-wrong").textContent = `틀린 문제만 (${wrong})`;
   $("tab-all").textContent = `전체 문제 (${record.total})`;
   setFilter(wrong ? "wrong" : "all");
@@ -318,7 +318,7 @@ function retryWrong() {
   const wrong = shown.record.items.filter((it) => it.picked !== it.answer);
   if (!wrong.length) return;
   kid = kidById(shown.kidId);
-  startQuiz(remakeProblems(wrong), "retry", Math.max(60, wrong.length * RETRY_SECONDS_PER_Q));
+  startQuiz(makeSimilar(wrong), "retry", Math.max(60, wrong.length * RETRY_SECONDS_PER_Q));
 }
 
 /* ---------- 알림 창 ---------- */
@@ -351,7 +351,9 @@ $("modal-cancel").onclick = () => {
 for (const b of document.querySelectorAll("[data-go=home]")) b.onclick = renderHome;
 $("start-btn").onclick = () => {
   unlock();
-  startQuiz(makeQuiz(), "full", minutes() * 60);
+  // 지난 기록 몇 번에 나온 식은 되도록 다시 내지 않는다
+  const recent = history.list(kid.id).slice(0, 5).flatMap((r) => (r.items || []).map(exprKey));
+  startQuiz(makeQuiz(Math.random, undefined, recent), "full", minutes() * 60);
 };
 $("submit-btn").onclick = askSubmit;
 $("rail-submit").onclick = askSubmit;
