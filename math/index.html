@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#f3f7ff" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>수학 문제 풀기</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- 누가 풀까요? -->
+  <section id="home" class="screen" hidden>
+    <header class="home-header">
+      <h1>수학 문제 풀기</h1>
+      <p class="sub">덧셈 · 뺄셈 50문제 · 4개 중에 정답 고르기</p>
+      <p class="sub">누가 풀까요?</p>
+    </header>
+    <div id="kid-list" class="kid-list"></div>
+  </section>
+
+  <!-- 시작 준비 + 지난 기록 -->
+  <section id="ready" class="screen" hidden>
+    <header class="sub-header">
+      <button class="icon-btn" type="button" data-go="home" aria-label="처음으로">‹</button>
+      <h1><span id="ready-avatar"></span> <span id="ready-name"></span></h1>
+      <span class="icon-spacer"></span>
+    </header>
+    <div class="ready-body">
+      <div class="card start-card">
+        <p class="big">문제 <b>50</b>개</p>
+        <p class="muted">시간 안에 다 풀어 보세요. 시간이 끝나면 저절로 제출돼요.</p>
+        <div class="time-pick" id="time-pick"></div>
+        <button id="start-btn" class="btn primary huge" type="button">시작하기 ▶</button>
+      </div>
+      <h2 class="section-title">지난 기록</h2>
+      <div id="record-list" class="record-list"></div>
+    </div>
+  </section>
+
+  <!-- 문제 풀기 -->
+  <section id="quiz" class="screen quiz-screen" hidden>
+    <div class="quiz-main">
+      <header class="quiz-header">
+        <b id="quiz-who"></b>
+        <span id="quiz-title" class="muted"></span>
+      </header>
+      <div id="sheet" class="sheet"></div>
+      <div class="sheet-end">
+        <button id="submit-btn" class="btn primary huge" type="button">다 풀었어요! 제출하기</button>
+      </div>
+    </div>
+    <!-- 옆에서 시간이 줄어드는 모습 -->
+    <aside class="timer-rail" id="timer-rail" aria-label="남은 시간">
+      <div class="timer-icon" id="timer-icon">⏳</div>
+      <div class="timer-text" id="timer-text">25:00</div>
+      <div class="timer-track"><div class="timer-fill" id="timer-fill"></div><div class="timer-runner" id="timer-runner">🐢</div></div>
+      <div class="timer-count"><b id="done-count">0</b><small>/<span id="total-count">50</span></small><span>풀었어요</span></div>
+      <button id="rail-submit" class="rail-submit" type="button">제출</button>
+    </aside>
+    <div id="toast" class="toast" hidden></div>
+  </section>
+
+  <!-- 결과 -->
+  <section id="result" class="screen" hidden>
+    <header class="sub-header">
+      <button class="icon-btn" type="button" id="result-back" aria-label="뒤로">‹</button>
+      <h1>결과</h1>
+      <span class="icon-spacer"></span>
+    </header>
+    <div class="result-body">
+      <div class="card score-card">
+        <div id="result-note" class="result-note" hidden></div>
+        <div class="score"><b id="result-score">0</b><small>점</small></div>
+        <p id="result-cheer" class="cheer"></p>
+        <p id="result-detail" class="muted"></p>
+        <div class="result-actions">
+          <button id="retry-btn" class="btn primary" type="button">틀린 문제 다시 풀기</button>
+          <button id="home-btn" class="btn ghost" type="button">처음으로</button>
+        </div>
+      </div>
+      <div class="tabs" role="tablist">
+        <button class="tab active" type="button" data-filter="wrong" id="tab-wrong">틀린 문제만</button>
+        <button class="tab" type="button" data-filter="all" id="tab-all">전체 문제</button>
+      </div>
+      <div id="review" class="review"></div>
+    </div>
+  </section>
+
+  <!-- 알림 창 -->
+  <div id="modal" class="modal" hidden>
+    <div class="modal-card">
+      <div id="modal-icon" class="modal-icon"></div>
+      <h2 id="modal-title"></h2>
+      <p id="modal-text" class="muted"></p>
+      <div class="modal-actions">
+        <button id="modal-cancel" class="btn ghost" type="button">취소</button>
+        <button id="modal-ok" class="btn primary" type="button">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
