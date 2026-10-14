@@ -26,7 +26,12 @@ function show(id) {
 const kidById = (id) => KIDS.find((k) => k.id === id) || null;
 
 function minutes() {
-  const m = Number(localStorage.getItem(KEY_MINUTES));
+  let m = 0;
+  try {
+    m = Number(localStorage.getItem(KEY_MINUTES));
+  } catch {
+    // 저장소를 못 쓰면 기본값
+  }
   return MINUTE_OPTIONS.includes(m) ? m : DEFAULT_MINUTES;
 }
 
@@ -84,7 +89,11 @@ function renderTimePick() {
     const b = el("button", "time-chip" + (m === minutes() ? " active" : ""), `⏰ ${m}분`);
     b.type = "button";
     b.onclick = () => {
-      localStorage.setItem(KEY_MINUTES, String(m));
+      try {
+        localStorage.setItem(KEY_MINUTES, String(m));
+      } catch {
+        // 무시
+      }
       renderTimePick();
     };
     box.append(b);
